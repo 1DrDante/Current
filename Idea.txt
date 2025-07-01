@@ -6,4 +6,8 @@ This file is made and contributed by ONLY Dan and other aproval members. If you 
 ******************
 
 
-1. 
+1. Make a module. AKA building blocks
+2. building blocks no1: Check machne working
+3. Building blocks no2: run current at {float} Volts for {float} time
+4. Building blocks no3: Dropping {float} Volts to {float} Volts in {float} time
+5. Building blocks no4:
