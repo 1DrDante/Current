@@ -6,7 +6,6 @@ import pandas as pd
 import os 
 
 #set up instruments
-
 def setup_instruments():
     rm = pyvisa.ResourceManager()
     
@@ -61,118 +60,6 @@ def setup_instruments():
     return psu, dmm
 
 
-
-
-# def setup_instruments():
-#     rm = pyvisa.ResourceManager()
-
-#     # dmm_addr = 'USB0::0x0957::0x0607::my47026696::0::INSTR'
-#     # power_supply_addr = 'USB0::0x1AB1::0x0E11::DP8C163452166::INSTR'  # update this once Rigol appears
-
-#     dmm_addr = 'USB0::0x0957::0x0607::my47026696::0::INSTR'
-#     power_supply_addr = 'USB0::0x1AB1::0x0E11::dp8c163452166::0::INSTR'
-
-
-
-#     dmm = rm.open_resource(dmm_addr)
-#     print("DMM ID:", dmm.query("*IDN?"))
-
-#     try:
-#         psu = rm.open_resource(power_supply_addr)
-#         print("Power Supply ID:", psu.query("*IDN?"))
-#     except Exception as e:
-#         print("⚠️ Power Supply not found. Check USB connection or driver.")
-#         psu = None
-
-#     return psu, dmm
-    # rm = pyvisa.ResourceManager()
-    # power_supply_addr = 'USB0::0x1AB1::0x0E11::DP8C163452166::INSTR'
-    # # dmm_addr = 'USB0::0x0957::0x0607::MY47026696::INSTR'
-#     dmm_addr = 'USB0::0x0957::0x0607::my47026696::0::INSTR'
-
-#     psu = rm.open_resource(power_supply_addr)
-#     dmm = rm.open_resource(dmm_addr)
-#     print("Power Supply ID:", psu.query("*IDN?"))
-#     print("DMM ID:", dmm.query("*IDN?"))
-#     return psu, dmm
-
-
-#run a single test
-# def run_test(psu, dmm, voltage, label="Standard"):
-#     psu.write(":INST CH1")
-#     current_voltage = float(psu.query(":VOLT?"))
-
-#     if voltage < current_voltage:
-#         step_size = 0.1 # made smaller change if needed
-#         wait_time = 2
-#         v = current_voltage
-#         while v - step_size > voltage:
-#             v -= step_size
-#             psu.write(f":VOLT {v:.2f}")
-#             print(f" Lowering voltage to {v:.2f} V")
-#             time.sleep(wait_time)
-#         psu.write(f":VOLT {voltage:.2f}")
-#     else:
-#         psu.write(f":VOLT {voltage:.2f}")
-
-#     #psu.write(":OUTP ON")
-#     print(f"\n Running '{label}' test at {voltage} V...")
-
-#     sample_count = 300  # decreasing to test
-#     dmm.timeout = 15000
-#     dmm.write("*CLS")
-#     dmm.write("*RST")
-#     dmm.write(":CONF:CURR:DC")
-#     dmm.write(":CURR:DC:NPLC 0.02")
-#     dmm.write(f":SAMP:COUN {sample_count}")
-#     dmm.write(":TRIG:SOUR IMM")
-#     dmm.write(":INIT")
-#     time.sleep(2.5)
-   
-
-#     raw_data = dmm.query(":FETC")
-#     readings = [float(x) for x in raw_data.strip().split(",")]
-
-#     return {
-#         "label": label,
-#         "voltage": voltage,
-#         "readings": readings
-#     }
-
-
-# def run_test(dmm, psu, voltage, label="Standard"):
-#     psu.write(":INST CH1")
-#     psu.write(f":VOLT {voltage:.2f}")
-#     print(f"\n Running '{label}' test at {voltage} V...")
-
-#     dmm.timeout = 15000
-#     dmm.write("*RST")
-#     dmm.write(":CONF:CURR:DC")
-#     dmm.write(":CURR:DC:NPLC 0.01")
-#     dmm.write(":SAMP:COUN 300")  # Start smaller, then increase
-#     dmm.write(":TRIG:SOUR IMM")
-#     dmm.write(":INIT")
-#     print(" DMM initialized, waiting before fetch...")
-#     time.sleep(2)
-
-
-#     try:
-#         raw_data = dmm.query(":FETC?")
-#         readings = [float(x) for x in raw_data.strip().split(",")]
-#         return {
-#             "label": label,
-#             "voltage": voltage,
-#             "readings": readings
-#         }
-#     except Exception as e:
-#         print(f" Error during measurement: {e}")
-#         return {
-#             "label": label,
-#             "voltage": voltage,
-#             "readings": []
-#         }
-
-#
 def run_test(psu, dmm, voltage, label="Standard", nplc=0.1, sample_count=100):
     psu.write(":INST CH1")
     psu.write(f":VOLT {voltage:.2f}")
@@ -232,31 +119,6 @@ def run_test(psu, dmm, voltage, label="Standard", nplc=0.1, sample_count=100):
             "readings": []
         }
 
-
-#detects a beep
-# def detect_beep(readings, label, threshold=0.02, min_gap=20):
-#     above = np.array(readings) > threshold
-#     spike_indices = []
-#     i = 0
-#     while i < len(above):
-#         if above[i]:
-#             spike_indices.append(i)
-#             i += min_gap
-#         else:
-#             i += 1
-
-#     num_spikes = len(spike_indices)
-
-#     if label == "Double Beep":
-#         detected = num_spikes >= 2
-#         print("✅ Double Beep Detected!" if detected else "❌ Double Beep NOT detected.")
-#         return detected
-
-#     if label == "Triple Beep":
-#         detected = num_spikes >= 3
-#         print("✅ Triple Beep Detected!" if detected else "❌ Triple Beep NOT detected.")
-#         return detected #either true or false 
-
 def detect_beep(readings, label, threshold=0.005, min_gap=10):
     # Lowered threshold from 0.02 to 0.005 → detects ~5 mA spikes
     above = np.array(readings) > threshold
@@ -283,26 +145,7 @@ def detect_beep(readings, label, threshold=0.005, min_gap=10):
         print("✅ Triple Beep Detected!" if detected else "❌ Triple Beep NOT detected.")
         return detected
 
-
-
 # plot results 
-#def plot_results(results):
-    plt.figure(figsize=(10, 6))
-    for res in [result_main, result_double, result_triple]:
-        t = [i * (1/1000) for i in range(len(res['readings']))]
-        y = [x * 1000 for x in res['readings']]
-        plt.plot(t, y, label=f"{res['label']} ({res['voltage']} V)")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Current (mA)")
-    plt.title("Current Over Time - All Tests")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-
-
-
 def plot_results(results):
     plt.figure(figsize=(10, 6))
     for res in results:
@@ -316,7 +159,6 @@ def plot_results(results):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
 
 #export to csv
 def export_summary_to_csv(voltage_main, max_current, double_detected, triple_detected, filename="summary_results.csv"):
@@ -333,33 +175,6 @@ def export_summary_to_csv(voltage_main, max_current, double_detected, triple_det
     df.to_csv(filename, mode='a', header=not file_exists, index=False)
 
     print(f"\n📄 Summary appended to '{os.path.abspath(filename)}'")
-
-
-
-# #main sequence logic
-# def run_beep_sequence(psu, dmm , v_main, v_double, v_triple):
-#     psu.write(":OUTP ON")
-
-#     result_main = run_test(psu, dmm, v_main, label="Main Test")
-#     r = result_main['readings']
-#     max_current = max(r)
-
-#     if not r:
-#         print("❌ No current readings collected. Skipping analysis.")
-#         return
-
-#     print(f"\n Main Test ({v_main} V):")
-#     print(f"Min: {min(r)*1000:.3f} mA | Max: {max(r)*1000:.3f} mA | Avg: {sum(r)/len(r)*1000:.3f} mA")
-
-#     result_double = run_test(psu, dmm, v_double, label="Double Beep")
-#     double_detected = detect_beep(result_double['readings'], "Double Beep")
-
-#     result_triple = run_test(psu, dmm, v_triple, label="Triple Beep")
-#     triple_detected = detect_beep(result_triple['readings'], "Triple Beep")
-
-
-#     plot_results([result_main, result_double, result_triple])
-#     #export_summary_to_csv(v_main, max_current, double_detected, triple_detected)
 
 def run_beep_sequence(psu, dmm, v_main, v_double, v_triple):
     if psu is None:
@@ -387,64 +202,6 @@ def run_beep_sequence(psu, dmm, v_main, v_double, v_triple):
 
 
     plot_results([result_main, result_double, result_triple])
-
-
-
-
-# def main():
-#     try:
-#         psu , dmm = setup_instruments()
-
-#         if psu is None:
-#             print("⚠️ Power Supply not detected — tests will be skipped or fail.")
-
-
-
-#         print("🔧 Running a quick DMM diagnostic...")
-#         try:
-#             # dmm.write("*RST")
-#             # dmm.write(":CONF:CURR:DC")
-#             # dmm.write(":SAMP:COUN 10")
-#             # dmm.write(":TRIG:SOUR IMM")
-#             # dmm.write(":INIT")
-#             # time.sleep(1)
-#             # raw_data = dmm.query(":FETC?")
-
-
-#             # dmm.write("*RST")
-#             # time.sleep(0.5)
-#             # dmm.write(":CONF:CURR:DC")
-#             # time.sleep(0.2)
-#             # dmm.write(":SAMP:COUN 10")
-#             # dmm.write(":TRIG:SOUR IMM")
-#             # time.sleep(0.2)
-#             # dmm.write(":INIT")
-#             # time.sleep(1.5)
-#             # raw_data = dmm.query(":FETC?")
-#             if dmm is None:
-#                 print("❌ DMM not available — skipping tests.")
-#                 return
-
-
-#             print("✅ DMM responded! Sample data:", raw_data[:60], "...")
-#         except Exception as e:
-#             print("❌ DMM failed basic test:", e)
-#             return  # Exit early if DMM is unresponsive
-
-
-#         print("\n Enter test voltages for automated run:")
-#         v_main = float(input(" MAIN test voltage: "))
-#         v_double = float(input(" DOUBLE BEEP test voltage: "))
-#         v_triple = float(input(" TRIPLE BEEP test voltage: "))
-
-#         run_beep_sequence(psu, dmm, v_main, v_double, v_triple)
-
-#     except ValueError:
-#         print(" Invalid input. Please enter numeric voltages.")
-
-#     except Exception as e:
-#         print(f" Error: {e}")
-
 
 def main():
     psu = None
